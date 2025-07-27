@@ -1,16 +1,18 @@
 package br.com.alura.alugames.service
 
+import br.com.alura.alugames.model.Gamer
+import br.com.alura.alugames.model.InfoGamerJson
 import br.com.alura.alugames.model.InfoJogo
+import br.com.alura.alugames.utilitario.criaGamer
 import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
 import java.net.URI
 import java.net.http.HttpClient
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse.BodyHandlers
 
 class ConsumoApi {
-    fun buscaJogo(id: String): InfoJogo {
-        val endereco = "https://www.cheapshark.com/api/1.0/games?id=$id"
-
+    private fun consomeDados(endereco: String): String {
         val client: HttpClient = HttpClient.newHttpClient()
         val request = HttpRequest.newBuilder()
             .uri(URI.create(endereco))
@@ -18,9 +20,27 @@ class ConsumoApi {
         val response = client
             .send(request, BodyHandlers.ofString())
 
-        val json = response.body()
+        return response.body()
+    }
+
+    fun buscaJogo(id: String): InfoJogo {
+        val endereco = "https://www.cheapshark.com/api/1.0/games?id=$id"
+        val json = consomeDados(endereco)
 
         val gson = Gson()
         return gson.fromJson(json, InfoJogo::class.java)
+    }
+
+    fun buscaGamer(): List<Gamer> {
+        val endereco = "https://raw.githubusercontent.com/jeniblodev/arquivosJson/main/gamers.json"
+        val json = consomeDados(endereco)
+
+        val gson = Gson()
+        val meuGamerTipo = object : TypeToken<List<InfoGamerJson>>() {}.type
+        val listaGamer: List<InfoGamerJson> = gson.fromJson(json, meuGamerTipo)
+
+        val listaGamerConvertida = listaGamer.map { infoGamerJson -> infoGamerJson.criaGamer() }
+
+        return listaGamerConvertida
     }
 }
